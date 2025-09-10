@@ -1,0 +1,232 @@
+---
+title: "HW1"
+author: "Yunqi Song"
+format: pdf
+editor: visual
+---
+
+# Github link
+
+<https://github.com/SONG-Yunqi/STATS-506-HW1/>
+
+# Problem 1
+
+## (a)
+
+Below I load the data as data.frame and name the columns.
+
+```{r}
+abalone = read.table('abalone.data',sep = ',')
+names(abalone) = c('sex','length','diam','height','whole','shucked',
+                   'viscera','shell','rings')
+head(abalone)
+```
+
+## (b)
+
+```{r}
+table(abalone$sex)
+```
+
+The number of female is 1307. The number of infant is 1342. The number of male is 1528.
+
+## (c)
+
+```{r}
+cor(abalone[5:9])
+```
+
+We can see that shell weight has the highest correlation with rings.
+
+```{r}
+for (s in c('F','I','M')){
+  data = abalone[abalone$sex == s,]
+  corr = cor(data[c(8,9)])[1,2]
+  print(paste(s,':',corr))
+}
+```
+
+Infant has the highest correlation.
+
+```{r}
+abalone[which.max(abalone$rings),]
+```
+
+For the abalone with the most rings, its whole weight, shucked weight, viscera weight and shell weight are 1.81, 0.71, 0.32, 0.48, respectively.
+
+```{r}
+nrow(abalone[abalone$viscera > abalone$shell,])/nrow(abalone)
+```
+
+6.51% abalones have a viscera weight larger than shell weight.
+
+## (d)
+
+```{r}
+female_cors = cor(abalone[abalone$sex == 'F',5:9])[5,1:4]
+male_cors = cor(abalone[abalone$sex == 'M',5:9])[5,1:4]
+infant_cors = cor(abalone[abalone$sex == 'I',5:9])[5,1:4]
+
+cor_table = rbind(female_cors,male_cors,infant_cors)
+rownames(cor_table) = c('female','male','infant')
+
+cor_table
+```
+
+The table is shown above.
+
+## (e)
+
+```{r}
+t.test(abalone[abalone$sex == 'F','rings'], abalone[abalone$sex == 'M','rings'])
+```
+
+```{r}
+t.test(abalone[abalone$sex == 'F','rings'], abalone[abalone$sex == 'I','rings'])
+```
+
+```{r}
+t.test(abalone[abalone$sex == 'I','rings'], abalone[abalone$sex == 'M','rings'])
+```
+
+Above there are three t-test results. The first is about female and male, the second is about female and infant, and the third is about infant and male. All the three results give a p-value smaller than 0.05. This means that under the confidence level = 5%, the number of rings are significantly different across the three sexes.
+
+# Problem 2
+
+## (a)
+
+```{r}
+food = read.csv('food_expenditure.csv')
+```
+
+The data has been loaded as a data.frame 'food'.
+
+## (b)
+
+```{r}
+names(food) = c('id','age','individual','state','currency','total','grocery','dining','miscellaneous','dining_time','is_alcohol','program')
+```
+
+## (c)
+
+```{r}
+print(paste('before restriction:',nrow(food)))
+food = food[food$currency == 'USD',]
+print(paste('after restriction:',nrow(food)))
+```
+
+## (d)
+
+I will remove all the rows with age smaller than 18 and greater than 90 to avoid some extreme ages. Also, I will remove rows with age = null value.
+
+```{r}
+food = food[(food$age >= 18) & (food$age <= 90) & (!is.na(food$age)),]
+```
+
+## (e)
+
+I will remove the rows with state = null value.
+
+```{r}
+food = food[(food$state != '') & (!is.na(food$state)),]
+```
+
+## (f)
+
+First, I will remove the rows where expenditure value is null value or is not a number. Second, I will remove rows with non-positive expenditure value. Third, I will remove the rows where the total expenditure is less than the sum of other three expenditure.
+
+```{r}
+food[6:9] = apply(food[6:9],c(1,2),function(x) suppressWarnings(as.numeric(x)))
+food = food[apply(food[6:9],1,function(x) all((!is.na(x)) & (x != '') & (x > 0))),]
+food = food[food$total >= food$grocery + food$dining + food$miscellaneous,]
+```
+
+## (g)
+
+I will remove the rows where dining time is 0 but the dining expenditure is not 0.
+
+```{r}
+food = food[!((food$dining > 0) & (food$dining_time == 0)),]
+```
+
+## (h)
+
+```{r}
+nrow(food)
+```
+
+The final number of observations is 62.
+
+# Problem 3
+
+## (a)
+
+Below is the required function.
+
+```{r}
+#' function to get the next number in a Collatz sequence
+#' @param x a positive integer input
+#' @return the next integer number in the Collatz sequence of x
+nextCollatz = function(x){
+  if ((x < 0) || (!is.numeric(x)) || (x %% 1 != 0)){
+    stop('the input is not a positive integer')
+  }
+  
+  if (x %% 2 == 0){
+    return(x/2)
+  } else{
+    return(3*x+1)
+  }
+}
+```
+
+```{r}
+print(nextCollatz(5))
+print(nextCollatz(16))
+```
+
+We see that the two examples are successfully reproduced.
+
+## (b)
+
+Below is the required function.
+
+```{r}
+#' function to get the Collatz sequence
+#' @param x a positive integer input
+#' @return A list containing the vector of the entries in the Collatz sequence, beginning at the input and ending at 1
+collatzSequence = function(x){
+  if ((x < 0) || (!is.numeric(x)) || (x %% 1 != 0)){
+    stop('the input is not a positive integer')
+  }
+  
+  result = c()
+  next_num = x
+  
+  while (next_num != 1){
+    result = append(result,next_num)
+    next_num = nextCollatz(next_num)
+  }
+  result = append(result,1)
+  return(result)
+}
+```
+
+```{r}
+print(collatzSequence(5))
+print(collatzSequence(19))
+```
+
+We see that the two examples are successfully reproduced.
+
+## (c)
+
+```{r}
+lens = sapply(100:500,function(x) length(collatzSequence(x)))
+max_len_num = which.max(lens) + 99
+min_len_num = which.min(lens) + 99
+print(paste('lowest number giving the longest sequence:',max_len_num))
+print(paste('lowest number giving the shortest sequence length:',min_len_num))
+```
+
+The lowest starting value giving the longest sequence is 327. The lowest starting value giving the shortest sequence is 128.
